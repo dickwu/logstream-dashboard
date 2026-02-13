@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build and Release
 
 on:
   push:
@@ -24,14 +24,18 @@ jobs:
       - name: Build
         run: bun run build
         
-      - name: Upload build
+      - name: Create ZIP
+        run: |
+          cd out
+          zip -r ../dashboard.zip .
+          
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: next-build
-          path: out/
-          retention-days: 7
+          name: dashboard
+          path: dashboard.zip
 
-  deploy:
+  release:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
@@ -39,14 +43,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Download build
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: next-build
-          path: out/
+          name: dashboard
+          path: .
           
-      - name: Deploy to Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./out
+          files: dashboard.zip
+          generate_release_notes: true
